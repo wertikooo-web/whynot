@@ -1,0 +1,26 @@
+name: Make Russian tagline two lines
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/two-line-ru-tagline.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text()
+          s=s.replace("tag:'Сомневаетесь? Спросите WHY NOT?!'", "tag:'Сомневаетесь?<br>Спросите WHY NOT?!'")
+          s=s.replace("document.getElementById('tagline').textContent=t.tag", "document.getElementById('tagline').innerHTML=t.tag")
+          p.write_text(s)
+          PY
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Split Russian tagline into two lines" || exit 0
+          git push
