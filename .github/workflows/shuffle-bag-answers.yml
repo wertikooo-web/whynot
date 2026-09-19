@@ -1,0 +1,42 @@
+name: Add shuffle bag answer rotation
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/shuffle-bag-answers.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch answer picker
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text()
+          # Replace simple random array picker globally with a shuffle-bag picker.
+          old="const pick=a=>a[Math.floor(Math.random()*a.length)];"
+          new="""const BAG={};
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=(a,key='default')=>{if(!a||!a.length)return '';const sig=key+'|'+a.length+'|'+a.join('¦');let b=BAG[sig];if(!b||!b.length){b=shuffle(a);const last=localStorage.getItem('whynot:last:'+key);if(b.length>1&&b[0]===last)[b[0],b[1]]=[b[1],b[0]];BAG[sig]=b}const v=b.shift();localStorage.setItem('whynot:last:'+key,v);return v};"""
+          if old not in s:
+              raise SystemExit('picker marker not found')
+          s=s.replace(old,new)
+          # Give response picks separate bags by language/mode/type where exact common patterns exist.
+          s=s.replace("pick(r.yes)", "pick(r.yes,lang+'|'+mode+'|yes')")
+          s=s.replace("pick(r.no)", "pick(r.no,lang+'|'+mode+'|no')")
+          s=s.replace("pick(r.why)", "pick(r.why,lang+'|'+mode+'|why')")
+          # Some code may use pool variables; keep them non-repeating too by deriving stable keys.
+          s=s.replace("pick(pool.yes)", "pick(pool.yes,lang+'|'+mode+'|yes')")
+          s=s.replace("pick(pool.no)", "pick(pool.no,lang+'|'+mode+'|no')")
+          s=s.replace("pick(pool.why)", "pick(pool.why,lang+'|'+mode+'|why')")
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Use shuffle bags to reduce repeated answers" || exit 0
+          git push
