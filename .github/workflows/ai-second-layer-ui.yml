@@ -16,17 +16,14 @@ jobs:
           from pathlib import Path
           p=Path('index.html'); s=p.read_text()
           if 'id="aiReal"' in s: raise SystemExit
-          s=s.replace('.quick{display:flex;', '.ai-layer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}.ai-real{border:2px solid;border-radius:999px;background:var(--blue);padding:9px 14px;font-weight:950}.ai-offer{display:none;border:2px solid;border-radius:16px;background:var(--pink);padding:10px 13px;font-weight:850;font-size:13px}.ai-offer.show{display:inline-block}.ai-badge{font-size:12px;font-weight:900;opacity:.62}.more-ai{margin:0 0 20px;border:2px solid;border-radius:999px;background:var(--blue);padding:9px 14px;font-weight:900}.quick{display:flex;')
-          s=s.replace('<div class="quick" id="quick"></div>', '<div class="ai-layer"><button class="ai-real" id="aiReal"></button><span class="ai-badge" id="aiLimit"></span><button class="ai-offer" id="aiOffer"></button></div><div class="quick" id="quick"></div>')
+          s=s.replace('.quick{display:flex;', '.ai-layer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}.ai-real{border:2px solid;border-radius:999px;background:var(--blue);padding:9px 14px;font-weight:950}.ai-offer{display:none;border:2px solid;border-radius:16px;background:var(--pink);padding:10px 13px;font-weight:850;font-size:13px}.ai-offer.show{display:inline-block}.more-ai{margin:0 0 20px;border:2px solid;border-radius:999px;background:var(--blue);padding:9px 14px;font-weight:900}.quick{display:flex;')
+          s=s.replace('<div class="quick" id="quick"></div>', '<div class="ai-layer"><button class="ai-real" id="aiReal"></button><button class="ai-offer" id="aiOffer"></button></div><div class="quick" id="quick"></div>')
           s=s.replace('<div class="question-grid" id="qgrid"></div>', '<button class="more-ai" id="moreAI"></button><div class="question-grid" id="qgrid"></div>')
-          # Localized copy appended to locale objects
-          s=s.replace("en:{ask:'Ask something',", "en:{aiReal:'✨ Ask for real',aiOffer:'This question is too good for random. Connect AI?',aiLimit:'3 smart decisions today',moreAI:'✨ More dilemmas',ask:'Ask something',")
-          s=s.replace("ru:{ask:'Задать вопрос',", "ru:{aiReal:'✨ Спроси по-настоящему',aiOffer:'Этот вопрос слишком хорош для рандома. Подключить AI?',aiLimit:'3 умных решения сегодня',moreAI:'✨ Ещё дилеммы',ask:'Задать вопрос',")
-          s=s.replace("ro:{ask:'Pune o întrebare',", "ro:{aiReal:'✨ Întreabă pe bune',aiOffer:'Întrebarea asta e prea bună pentru random. Conectăm AI?',aiLimit:'3 decizii inteligente azi',moreAI:'✨ Mai multe dileme',ask:'Pune o întrebare',")
-          # Render labels
+          s=s.replace("en:{ask:'Ask something',", "en:{aiReal:'✨ Ask for real',aiOffer:'This question is too complex. Ask AI?',moreAI:'✨ More dilemmas',ask:'Ask something',")
+          s=s.replace("ru:{ask:'Задать вопрос',", "ru:{aiReal:'✨ Спроси по-настоящему',aiOffer:'Этот вопрос слишком сложен. Спросить AI?',moreAI:'✨ Ещё дилеммы',ask:'Задать вопрос',")
+          s=s.replace("ro:{ask:'Pune o întrebare',", "ro:{aiReal:'✨ Întreabă pe bune',aiOffer:'Întrebarea asta e prea complexă. Întrebăm AI?',moreAI:'✨ Mai multe dileme',ask:'Pune o întrebare',")
           needle="document.getElementById('question').placeholder=t.ph;"
-          s=s.replace(needle,"document.getElementById('aiReal').textContent=t.aiReal;document.getElementById('aiOffer').textContent=t.aiOffer;document.getElementById('aiLimit').textContent=t.aiLimit;document.getElementById('moreAI').textContent=t.moreAI;"+needle)
-          # Long-question detection and prototype behavior. No fake AI: explain endpoint is not connected yet.
+          s=s.replace(needle,"document.getElementById('aiReal').textContent=t.aiReal;document.getElementById('aiOffer').textContent=t.aiOffer;document.getElementById('moreAI').textContent=t.moreAI;"+needle)
           anchor="document.getElementById('askTop').onclick=()=>document.getElementById('question').focus();"
           js="""const aiReal=document.getElementById('aiReal'),aiOffer=document.getElementById('aiOffer'),qInput=document.getElementById('question');
 qInput.addEventListener('input',()=>aiOffer.classList.toggle('show',qInput.value.trim().length>=70));
