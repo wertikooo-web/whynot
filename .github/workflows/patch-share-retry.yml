@@ -1,0 +1,64 @@
+name: Patch WHY NOT retry and sharing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-share-retry.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index.html
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          s=s.replace("again:'Ask again'", "again:'Another try!'")
+          s=s.replace("again:'Пересчитать'", "again:'Ещё попытка!'")
+          s=s.replace("again:'Mai întreabă o dată'", "again:'Încă o încercare!'")
+
+          # Remember the last rendered pair so retry can guarantee a different result
+          s=s.replace("let lang=localStorage.getItem('whyLang')||'en',mode=localStorage.getItem('whyMode')||'human';", "let lang=localStorage.getItem('whyLang')||'en',mode=localStorage.getItem('whyMode')||'human',lastAnswer='';")
+
+          old="function answer(){let q=document.getElementById('question').value.trim();if(!q)return;"
+          new="function answer(forceDifferent=false){let q=document.getElementById('question').value.trim();if(!q)return;"
+          s=s.replace(old,new)
+
+          # Before showing a normal random answer, retry a few times when user explicitly asks for another try
+          old="show(x)}function show(x){"
+          new="if(forceDifferent){let tries=0;while((x[0]+'|'+x[1])===lastAnswer&&tries++<12){if(mode==='reason'){let b=r.reason[c];let yes=Math.random()<.38;x=[yes?b.yes:b.no,b.why]}else if(mode==='universe'){let yes=Math.random()<.55;x=[rand(yes?r.universe.yes:r.universe.no),rand(r.universe.why)]}else if(mode==='human'){let yes=Math.random()<.58;x=[rand(yes?r.human.yes:r.human.no),rand(r.human.why)]}else{let yes=Math.random()<.78;x=[rand(yes?r.wild.yes:r.wild.no),rand(r.wild.why)]}}}show(x)}function show(x){lastAnswer=x[0]+'|'+x[1];"
+          s=s.replace(old,new)
+
+          s=s.replace("document.getElementById('again').onclick=answer;", "document.getElementById('again').onclick=()=>answer(true);")
+
+          # Replace sharing with a URL that contains the exact visible result
+          start="document.getElementById('share').onclick=async()=>{let text=`WHY NOT?"
+          i=s.find(start)
+          if i!=-1:
+              j=s.find(";render();",i)
+              if j!=-1:
+                  share="""document.getElementById('share').onclick=async()=>{let q=document.getElementById('question').value.trim(),v=document.getElementById('verdict').textContent,r=document.getElementById('reason').textContent;let u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('q',q);u.searchParams.set('mode',mode);u.searchParams.set('lang',lang);u.searchParams.set('v',v);u.searchParams.set('r',r);let text=lang==='ru'?`Я спросил WHY NOT?: «${q}»\\n${v}\\n${r}`:lang==='ro'?`Am întrebat WHY NOT?: „${q}”\\n${v}\\n${r}`:`I asked WHY NOT?: “${q}”\\n${v}\\n${r}`;if(navigator.share)try{await navigator.share({title:'WHY NOT?',text,url:u.toString()})}catch(e){}else{await navigator.clipboard?.writeText(text+'\\n'+u.toString())}};
+          function loadSharedResult(){let p=new URLSearchParams(location.search),q=p.get('q'),v=p.get('v'),r=p.get('r'),m=p.get('mode'),l=p.get('lang');if(!q||!v||!r)return;if(['en','ru','ro'].includes(l))lang=l;if(['reason','universe','human','wild'].includes(m))mode=m;localStorage.setItem('whyLang',lang);localStorage.setItem('whyMode',mode);render();document.getElementById('question').value=q;show([v,r])}
+          """
+                  s=s[:i]+share+s[j:]
+
+          # Call shared-result loader after the normal initial render
+          s=s.replace(";render();\n</script>", ";render();loadSharedResult();\n</script>")
+          p.write_text(s,encoding='utf-8')
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Improve retry and share exact WHY NOT result [skip ci]"
+          git push
