@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "whynot",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-19",
+  "ai": {
+    "binding": "AI"
+  }
+}
