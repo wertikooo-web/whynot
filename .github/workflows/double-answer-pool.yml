@@ -1,0 +1,39 @@
+name: Double answer pool
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/double-answer-pool.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand answer phrases
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='const danger='
+          if 'const EXTRA_RESP=' in s:
+              print('Already expanded')
+              raise SystemExit
+          extra=r'''const EXTRA_RESP={
+          ru:{universe:{yes:['КОСМОС ДАЛ ДОБРО','ЗВЁЗДЫ НЕ ПРОТИВ','СЕГОДНЯ МОЖНО','СУДЬБА ПОДМИГНУЛА','ЭТО ПОХОЖЕ НА ЗНАК'],no:['КОСМОС ПРОСИТ ПАУЗУ','ЗВЁЗДЫ СОВЕТУЮТ НЕ ЛЕЗТЬ','НЕ СЕГОДНЯ','ЗНАКИ КАК-ТО МОЛЧАТ','ПУСТЬ СОЗРЕЕТ'],why:['Иногда отсутствие сопротивления тоже вполне себе знак','Если пришлось спросить Вселенную дважды, ответ уже где-то рядом','Сегодня интуиция звучит убедительнее таблицы','Космос рекомендует оставить немного места случайности','Некоторые решения лучше проверять не логикой, а ощущением после слова «да»']},human:{yes:['ДА, Я БЫ РИСКНУЛ','ЗВУЧИТ ВПОЛНЕ НОРМАЛЬНО','ПОПРОБУЙ','ДА, ЕСЛИ ТЕБЕ ЭТО НАДО','МОЖНО СЕБЕ РАЗРЕШИТЬ'],no:['НЕ НАДО СЕБЯ УГОВАРИВАТЬ','Я БЫ ОСТАВИЛ ЭТО НА ЗАВТРА','ПОКА НЕТ','ЛУЧШЕ ПРОПУСТИТЬ','НЕ ПОХОЖЕ НА ХОРОШУЮ ИДЕЮ'],why:['Если приходится слишком долго себя убеждать, это тоже информация','Хороший выбор обычно не требует внутренней пресс-конференции','Спроси себя, станет ли завтра легче или появится новая головная боль','Иногда взрослое решение скучнее, зато утро приятнее','Можно хотеть чего-то и всё равно решить этого не делать']},wild:{yes:['ДАВАЙ, ЖИЗНЬ ОДНА','БЕРИ, ПОТОМ РАЗБЕРЁМСЯ','ОДОБРЕНО ВНУТРЕННИМ ХУЛИГАНОМ','СЕГОДНЯ МОЖНО БЫТЬ НЕРАЗУМНЫМ','ЭТОТ ПЛАН МНЕ УЖЕ НРАВИТСЯ'],no:['НЕТ. ДАЖЕ ХАОС ИМЕЕТ ГРАНИЦЫ','ОТМЕНА. СЛИШКОМ ДАЖЕ ДЛЯ НАС','ПУСТЬ ЭТА ГЕНИАЛЬНАЯ ИДЕЯ УМРЁТ'],why:['Завтрашний ты разберётся, сегодняшний уже устал думать','Иногда приключение начинается именно с сомнительного «ладно»','Если история потом будет смешной, у неё уже есть один аргумент за','Внутренний взрослый вышел на пять минут, пользуйся аккуратно','План сомнительный, зато скучным его точно не назовёшь','Если очень хочется нажать большую красную кнопку, хотя бы знай зачем']}},
+          en:{universe:{yes:['COSMOS APPROVES','THE STARS DO NOT OBJECT','TODAY GETS A YES','FATE JUST WINKED','THAT LOOKS LIKE A SIGN'],no:['COSMOS REQUESTS A PAUSE','THE STARS SAY STAY OUT OF IT','NOT TODAY','THE SIGNS ARE AWFULLY QUIET','LET IT RIPEN'],why:['Sometimes a lack of resistance is a sign too','If you had to ask the Universe twice, the answer may already be nearby','Today intuition sounds more convincing than the spreadsheet','The cosmos recommends leaving a little room for chance','Some choices are better tested by how you feel after saying yes']},human:{yes:['YES, I WOULD RISK IT','SOUNDS REASONABLE ENOUGH','GIVE IT A TRY','YES, IF YOU ACTUALLY WANT IT','YOU CAN ALLOW YOURSELF THIS'],no:['DO NOT TALK YOURSELF INTO IT','I WOULD LEAVE IT UNTIL TOMORROW','NOT YET','BETTER SKIP THIS ONE','DOES NOT SOUND LIKE A GREAT IDEA'],why:['If you have to persuade yourself for too long, that is information too','A good choice rarely needs an internal press conference','Ask whether tomorrow gets easier or simply gains a new headache','Sometimes the grown-up choice is duller and the morning is nicer','You can want something and still decide not to do it']},wild:{yes:['COME ON, ONE LIFE','GET IT, WE WILL FIGURE IT OUT LATER','APPROVED BY YOUR INNER TROUBLEMAKER','TODAY YOU MAY BE UNREASONABLE','I ALREADY LIKE THIS PLAN'],no:['NO. EVEN CHAOS HAS LIMITS','CANCELLED. TOO MUCH EVEN FOR US','LET THIS BRILLIANT IDEA DIE'],why:['Tomorrow-you can deal with it, today-you is tired of thinking','Sometimes an adventure begins with a questionable fine','If the story will be funny later, it already has one point in its favor','Your inner adult stepped out for five minutes, use them carefully','The plan is questionable, but nobody can call it boring','If you really want to press the big red button, at least know why']}},
+          ro:{universe:{yes:['COSMOSUL APROBĂ','STELELE NU SE OPUN','AZI PRIMEȘTI UN DA','DESTINUL TOCMAI ȚI-A FĂCUT CU OCHIUL','ASTA SEAMĂNĂ CU UN SEMN'],no:['COSMOSUL CERE O PAUZĂ','STELELE SPUN SĂ NU TE BAGI','NU AZI','SEMNELE SUNT CAM TĂCUTE','MAI LASĂ-L SĂ SE COACĂ'],why:['Uneori și lipsa rezistenței poate fi un semn','Dacă ai întrebat Universul de două ori, răspunsul e probabil deja aproape','Azi intuiția sună mai convingător decât tabelul','Cosmosul recomandă să lași puțin loc întâmplării','Unele alegeri se verifică mai bine prin senzația de după un da']},human:{yes:['DA, EU AȘ RISCA','SUNĂ DESTUL DE BINE','ÎNCEARCĂ','DA, DACĂ TU CHIAR VREI','ÎȚI POȚI PERMITE ASTA'],no:['NU TE CONVINGE SINGUR','EU AȘ LĂSA PE MÂINE','ÎNCĂ NU','MAI BINE SARI PESTE','NU SUNĂ CA O IDEE PREA BUNĂ'],why:['Dacă trebuie să te convingi prea mult, și asta e informație','O alegere bună rareori cere o conferință de presă interioară','Întreabă-te dacă mâine va fi mai simplu sau vei avea o nouă bătaie de cap','Uneori alegerea matură e mai plictisitoare, iar dimineața mai plăcută','Poți să vrei ceva și totuși să alegi să nu o faci']},wild:{yes:['HAI, O VIAȚĂ AVEM','IA-L, NE LĂMURIM DUPĂ','APROBAT DE MICA TA PARTE REBELĂ','AZI AI VOIE SĂ FII NERAȚIONAL','DEJA ÎMI PLACE PLANUL ĂSTA'],no:['NU. PÂNĂ ȘI HAOSUL ARE LIMITE','ANULAT. PREA MULT CHIAR ȘI PENTRU NOI','LASĂ IDEEA ASTA GENIALĂ SĂ MOARĂ'],why:['Tu de mâine se va descurca, tu de azi ai obosit să gândești','Uneori aventura începe cu un bine foarte îndoielnic','Dacă povestea va fi amuzantă mai târziu, are deja un argument pro','Adultul tău interior a ieșit cinci minute, folosește-le cu grijă','Planul e dubios, dar plictisitor sigur nu e','Dacă vrei neapărat să apeși butonul roșu, măcar să știi de ce']}}
+          };
+          for(const l of ['ru','en','ro'])for(const m of ['universe','human','wild'])for(const k of ['yes','no','why'])RESP[l][m][k].push(...EXTRA_RESP[l][m][k]);
+          '''
+          s=s.replace(marker,extra+'\n'+marker)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Double WHY NOT answer phrase pool" || exit 0
+          git push
