@@ -1,0 +1,85 @@
+name: Expand SEX category and answers
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/expand-sex-and-answers.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch site
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          if 'SEX_Q=' in s:
+              print('Already patched'); raise SystemExit
+
+          # Add SEX label to language filters
+          s=s.replace("filters:['All','Relationships','Work','Money','Travel','Life']", "filters:['All','Relationships','Work','Money','Travel','Life','SEX']")
+          s=s.replace("filters:['Все','Отношения','Работа','Деньги','Поездки','Жизнь']", "filters:['Все','Отношения','Работа','Деньги','Поездки','Жизнь','SEX']")
+          s=s.replace("filters:['Toate','Relații','Muncă','Bani','Călătorii','Viață']", "filters:['Toate','Relații','Muncă','Bani','Călătorii','Viață','SEX']")
+
+          marker='const KW='
+          sexq=r'''const SEX_Q=[
+          ['💋','sex','Have sex tonight?','Заняться сексом сегодня?','Să fac sex în seara asta?'],
+          ['🔥','sex','Make the first move?','Сделать первый шаг?','Să fac primul pas?'],
+          ['🛏️','sex','Stay the night?','Остаться на ночь?','Să rămân peste noapte?'],
+          ['💬','sex','Tell them what I actually want?','Сказать прямо, чего мне хочется?','Să spun direct ce îmi doresc?'],
+          ['❤️‍🔥','sex','Try something new together?','Попробовать вместе что-нибудь новое?','Să încercăm ceva nou împreună?'],
+          ['📚','sex','Try a new Kamasutra pose?','Попробовать новую позу из Камасутры?','Să încercăm o poziție nouă din Kama Sutra?'],
+          ['🎲','sex','Let chance choose tonight’s experiment?','Доверить выбор сегодняшнего эксперимента случаю?','Să lăsăm întâmplarea să aleagă experimentul din seara asta?'],
+          ['🕯️','sex','Turn tonight into a proper date first?','Сначала устроить настоящее свидание?','Să transformăm mai întâi seara într-o întâlnire adevărată?'],
+          ['🙈','sex','Admit that I am shy about this?','Признаться, что я этого стесняюсь?','Să recunosc că îmi este jenă?'],
+          ['🗣️','sex','Talk about boundaries before we start?','Обсудить границы заранее?','Să vorbim despre limite înainte?'],
+          ['🛡️','sex','Pause until we sort out protection?','Подождать, пока не решим вопрос с защитой?','Să așteptăm până clarificăm protecția?'],
+          ['🤔','sex','Ask whether they actually want this too?','Спросить, действительно ли этого хочется нам обоим?','Să întreb dacă ne dorim amândoi asta?'],
+          ['🌙','sex','Send that late-night invitation?','Отправить то самое ночное приглашение?','Să trimit invitația aceea târzie?'],
+          ['🚿','sex','Take a shower together?','Пойти вместе в душ?','Să facem duș împreună?'],
+          ['🎵','sex','Make a bedroom playlist?','Собрать плейлист для спальни?','Să fac un playlist pentru dormitor?'],
+          ['📵','sex','Put both phones away for the night?','Убрать оба телефона подальше на вечер?','Să punem ambele telefoane deoparte pentru seară?'],
+          ['😈','sex','Say yes to the slightly naughty idea?','Согласиться на слегка хулиганскую идею?','Să spun da ideii puțin obraznice?'],
+          ['🧠','sex','Stop overthinking the chemistry?','Перестать анализировать химию между нами?','Să nu mai analizez atât chimia dintre noi?'],
+          ['🔁','sex','Give an old flame one more night?','Дать старой страсти ещё один шанс?','Să mai dau o șansă unei vechi pasiuni?'],
+          ['☀️','sex','Wait until tomorrow and see if I still want it?','Подождать до завтра и проверить, всё ли ещё хочется?','Să aștept până mâine și să văd dacă încă îmi doresc?'],
+          ['🥂','sex','Mix flirting and wine tonight?','Добавить сегодня к флирту немного вина?','Să combin flirtul cu puțin vin în seara asta?'],
+          ['🪞','sex','Tell them what makes me feel attractive?','Сказать, что помогает мне чувствовать себя желанным или желанной?','Să spun ce mă face să mă simt dorit sau dorită?'],
+          ['🎁','sex','Plan a surprise for our intimate evening?','Устроить сюрприз для нашего интимного вечера?','Să pregătesc o surpriză pentru seara noastră intimă?'],
+          ['😂','sex','Laugh if the sexy plan goes completely off-script?','Посмеяться, если сексуальный план пойдёт совсем не по сценарию?','Să râdem dacă planul sexy iese complet din scenariu?']
+          ];
+          Q.push(...SEX_Q);
+          '''
+          s=s.replace(marker,sexq+'\n'+marker)
+
+          # Treat free-form sex questions as relationship-context questions
+          s=s.replace("const KW={rel:/", "const KW={rel:/sex|секс|интим|камасутр|kamasutra|intim|sex|", 1)
+
+          # SEX appears only when its filter is selected, never under All
+          old="let t=UI[lang],cats=['all','rel','work','money','travel','life'];"
+          new="let t=UI[lang],cats=['all','rel','work','money','travel','life','sex'];"
+          s=s.replace(old,new)
+          s=s.replace("Q.filter(x=>f==='all'||x[1]===f)", "Q.filter(x=>(f==='all'?x[1]!=='sex':x[1]===f))")
+
+          # Another substantial set of polished phrases, combined with existing pools
+          marker2='const danger='
+          extra=r'''const EXTRA_RESP_2={
+          ru:{universe:{yes:['ЗВЁЗДЫ СЕГОДНЯ ЗА ТЕБЯ','ИНТУИЦИЯ ПОДАЛА ГОЛОС','ПОТОК НЕ СОПРОТИВЛЯЕТСЯ','СЛУЧАЙНОСТЬ ГОВОРИТ «ДА»','КОСМОС ОСТАВИЛ ДВЕРЬ ОТКРЫТОЙ','ПОХОЖЕ, МОМЕНТ ПОДХОДЯЩИЙ','ВНУТРЕННИЙ КОМПАС КИВАЕТ','ЗНАКИ СЛОЖИЛИСЬ УДАЧНО','СЕГОДНЯ ВСЕЛЕННАЯ ДОБРАЯ','МОЖНО ДОВЕРИТЬСЯ МОМЕНТУ'],no:['ЗВЁЗДЫ ПРОСЯТ НЕ СПЕШИТЬ','ИНТУИЦИЯ ЖМЁТ НА ТОРМОЗ','КОСМОС ВЗЯЛ ПАУЗУ','СЕГОДНЯ ЛУЧШЕ НЕ ФОРСИРОВАТЬ','ЗНАКИ ПРОСЯТ ЕЩЁ ОДНУ НОЧЬ','МОМЕНТ ПОКА НЕ СОЗРЕЛ','ВСЕЛЕННАЯ ОСТАВИЛА ВОПРОС ОТКРЫТЫМ','СЛУЧАЙНОСТЬ СЕГОДНЯ ОСТОРОЖНА','ВНУТРЕННИЙ КОМПАС НЕ УВЕРЕН','ПУСТЬ СОБЫТИЯ ДОГОНЯТ ТЕБЯ'],why:['Иногда лучший знак появляется после паузы, а не перед прыжком','Если мысль приносит лёгкость, это полезнее случайного совпадения','Интуиция лучше слышна, когда ты перестаёшь уговаривать себя','Случайность хороша как советчик, пока решение остаётся твоим','Проверь, что чувствуешь сразу после мысленного «решено»','Знак, который приходится насильно объяснять, обычно слабоват','Иногда Вселенная отвечает простым отсутствием внутреннего сопротивления','Оставь решению немного воздуха и посмотри, вернётся ли желание','Если оба варианта кажутся знаками, выбери тот, после которого спокойнее','Космос любит драму, а тебе потом жить с последствиями']},human:{yes:['ДА, ЗВУЧИТ ЖИВО','Я БЫ ПОПРОБОВАЛ','МОЖНО ДАТЬ ЭТОМУ ШАНС','ПОХОЖЕ, ЭТО ТВОЁ «ДА»','РАЗРЕШИ СЕБЕ ПОПРОБОВАТЬ','ВПОЛНЕ МОЖНО','Я БЫ НЕ ОТКЛАДЫВАЛ БЕСКОНЕЧНО','ЕСЛИ ХОЧЕТСЯ, ПОПРОБУЙ','ЗВУЧИТ КАК НОРМАЛЬНЫЙ РИСК','ДА, С ОТКРЫТЫМИ ГЛАЗАМИ'],no:['Я БЫ СЕГОДНЯ НЕ СТАЛ','НЕ ВЫЖИМАЙ ИЗ СЕБЯ «ДА»','ПАУЗА СЕЙЧАС УМЕСТНА','ОСТАВЬ СЕБЕ ПРАВО ПЕРЕДУМАТЬ','ПОКА НЕ УБЕДИЛО','ЛУЧШЕ НЕ НА АВТОПИЛОТЕ','СНАЧАЛА РАЗБЕРИСЬ, ЧЕГО ХОЧЕШЬ','НЕ ОБЯЗАТЕЛЬНО РЕШАТЬ СЕЙЧАС','СЕГОДНЯ Я БЫ ВЫБРАЛ СПОКОЙСТВИЕ','ПУСТЬ РЕШЕНИЕ ДОЗРЕЕТ'],why:['Хороший друг спросил бы, чего ты хочешь получить после этого решения','Если цена ошибки невелика, эксперимент вполне допустим','Если внутри приходится спорить слишком громко, пауза может быть полезнее ответа','Решение становится крепче, когда ты можешь объяснить его себе одной фразой','Смотри на последствия завтра утром, а не только на эмоцию сейчас','Желание и обязанность легко перепутать, проверь, что здесь твоё','Иногда достаточно выбрать обратимый шаг вместо окончательного решения','Если хочется и страшно одновременно, отдели реальный риск от обычного волнения','Не каждое сомнение означает «нет», иногда оно означает «мне нужно чуть больше ясности»','Выбирай вариант, за который завтра не придётся оправдываться перед собой']},wild:{yes:['ДА. И ХВАТИТ СОВЕЩАНИЙ','ОДОБРЕНО ОТДЕЛОМ ПЛОХИХ ИДЕЙ','ЖМИ НА КНОПКУ','СЮЖЕТУ НУЖЕН ПОВОРОТ','ПОЕХАЛИ, ПОКА РАЗУМ НЕ ВЕРНУЛСЯ','СЕГОДНЯ МОЖНО ЧУТЬ БОЛЬШЕ ЖИЗНИ','БЕРИ ЭТОТ МАЛЕНЬКИЙ ХАОС','ДА, НО ИСТОРИЮ ПОТОМ РАССКАЖЕШЬ','ВНУТРЕННИЙ ХУЛИГАН ПОДПИСАЛ','ПЛАН ПОДОЗРИТЕЛЬНЫЙ. МНЕ НРАВИТСЯ'],no:['НЕТ. ЭТО УЖЕ НЕ ВЕСЁЛЫЙ ХАОС','ДАЖЕ ВНУТРЕННИЙ ХУЛИГАН ОТОШЁЛ','СЮЖЕТУ ЭТОТ ПОВОРОТ НЕ НУЖЕН','ОТЛОЖИ КАТАСТРОФУ НА ДРУГОЙ ДЕНЬ','СЕГОДНЯ БЕЗ ЭТОГО ПРИКЛЮЧЕНИЯ','НЕТ, СОХРАНИ БОНУСНУЮ ЖИЗНЬ','ТУТ ДАЖЕ Я ВКЛЮЧУ ТОРМОЗ','ПЛОХАЯ ИДЕЯ БЕЗ ХОРОШЕЙ ИСТОРИИ','ПРОПУСТИ ЭТОТ ЭПИЗОД','ХАОС ГОЛОСУЕТ ПРОТИВ'],why:['Если делать глупость, пусть хотя бы она будет обратимой','Хорошая авантюра оставляет историю, плохая оставляет счёт','Импульс прекрасен, пока он не подписывает за тебя кредит','Иногда спонтанность заслуживает один вечер свободы','Если завтра будет смешно, шанс уже выглядит чуть симпатичнее','Твой внутренний взрослый может ворчать, но пусть хотя бы знает план','Риск ради истории бывает прекрасен, риск ради скуки совершенно бессмыслен','Оставь себе аварийный выход, и приключение станет приятнее','Если сомнительная идея пережила утро, у неё появились аргументы','Сегодняшний хаос должен хотя бы уважать завтрашнего тебя']}},
+          en:{universe:{yes:['THE STARS ARE ON YOUR SIDE','INTUITION HAS SPOKEN','THE CURRENT IS NOT FIGHTING YOU','CHANCE SAYS YES','THE COSMOS LEFT THE DOOR OPEN','THE MOMENT LOOKS RIGHT','YOUR INNER COMPASS NODS','THE SIGNS LINED UP','THE UNIVERSE IS KIND TODAY','TRUST THE MOMENT'],no:['THE STARS SAY SLOW DOWN','INTUITION HIT THE BRAKES','THE COSMOS TOOK A PAUSE','DO NOT FORCE IT TODAY','THE SIGNS WANT ONE MORE NIGHT','THE MOMENT IS NOT RIPE YET','THE UNIVERSE LEFT THIS OPEN','CHANCE IS CAUTIOUS TODAY','YOUR INNER COMPASS IS UNSURE','LET EVENTS CATCH UP'],why:['Sometimes the best sign appears after a pause, not before the jump','A thought that brings relief is more useful than a random coincidence','Intuition gets louder when you stop trying to persuade yourself','Chance is a fine adviser as long as the decision remains yours','Notice how you feel immediately after imagining it is decided','A sign you have to force into meaning is usually a weak one','Sometimes the Universe answers through a simple lack of inner resistance','Give the choice some air and see whether the desire returns','If both options look like signs, choose the one that leaves you calmer','The cosmos loves drama; you still have to live with the consequences']},human:{yes:['YES, THAT SOUNDS ALIVE','I WOULD TRY IT','GIVE IT A CHANCE','THAT SOUNDS LIKE YOUR YES','LET YOURSELF TRY','SEEMS REASONABLE','DO NOT POSTPONE IT FOREVER','IF YOU WANT IT, TRY','THAT IS A FAIR RISK','YES, WITH YOUR EYES OPEN'],no:['I WOULD SKIP IT TODAY','DO NOT SQUEEZE A YES OUT OF YOURSELF','A PAUSE MAKES SENSE','KEEP THE RIGHT TO CHANGE YOUR MIND','NOT CONVINCING YET','DO NOT DO IT ON AUTOPILOT','FIRST WORK OUT WHAT YOU WANT','YOU DO NOT HAVE TO DECIDE NOW','I WOULD CHOOSE PEACE TODAY','LET THE DECISION RIPEN'],why:['A good friend would ask what you hope to get after this choice','If the cost of being wrong is small, an experiment is reasonable','If the inner argument is getting loud, a pause may beat an answer','A decision gets stronger when you can explain it to yourself in one sentence','Look at tomorrow morning, not only at the emotion right now','Desire and obligation are easy to confuse; check which one is yours','Sometimes a reversible step is enough instead of a final decision','If you want it and fear it, separate real risk from ordinary nerves','Not every doubt means no; sometimes it means I need a little more clarity','Choose the option you will not need to defend to yourself tomorrow']},wild:{yes:['YES. MEETING ADJOURNED','APPROVED BY THE BAD IDEAS DEPARTMENT','PRESS THE BUTTON','THE PLOT NEEDS A TWIST','GO BEFORE REASON COMES BACK','TODAY CAN USE A LITTLE MORE LIFE','TAKE THIS SMALL PIECE OF CHAOS','YES, BUT YOU OWE US THE STORY','YOUR INNER TROUBLEMAKER SIGNED IT','QUESTIONABLE PLAN. I LIKE IT'],no:['NO. THIS IS NO LONGER FUN CHAOS','EVEN YOUR INNER TROUBLEMAKER BACKED AWAY','THE PLOT DOES NOT NEED THIS TWIST','POSTPONE THE DISASTER','SKIP THIS ADVENTURE TODAY','NO, SAVE THE BONUS LIFE','EVEN I AM HITTING THE BRAKES','BAD IDEA, NOT EVEN A GOOD STORY','SKIP THIS EPISODE','CHAOS VOTES NO'],why:['If you are doing something silly, at least keep it reversible','A good adventure leaves a story; a bad one leaves a bill','Impulse is lovely until it starts signing contracts for you','Sometimes spontaneity deserves one evening of freedom','If tomorrow will be funny, the odds already look a little better','Your inner adult may complain, but at least give them the plan','Risk for a story can be glorious; risk for boredom makes no sense','Keep an emergency exit and the adventure gets much nicer','If the questionable idea survives the morning, it has earned an argument','Today’s chaos should show at least some respect for tomorrow-you']}},
+          ro:{universe:{yes:['STELELE SUNT CU TINE','INTUIȚIA A VORBIT','CURENTUL NU ȚI SE OPUNE','ÎNTÂMPLAREA SPUNE DA','COSMOSUL A LĂSAT UȘA DESCHISĂ','MOMENTUL PARE POTRIVIT','BUSOLA INTERIOARĂ APROBĂ','SEMNELE S-AU ALINIAT','UNIVERSUL E BLÂND AZI','POȚI AVEA ÎNCREDERE ÎN MOMENT'],no:['STELELE SPUN SĂ ÎNCETINEȘTI','INTUIȚIA A PUS FRÂNĂ','COSMOSUL A LUAT O PAUZĂ','NU FORȚA AZI','SEMNELE MAI CER O NOAPTE','MOMENTUL NU E COPT','UNIVERSUL A LĂSAT ÎNTREBAREA DESCHISĂ','ÎNTÂMPLAREA E PRUDENTĂ AZI','BUSOLA INTERIOARĂ EZITĂ','LASĂ EVENIMENTELE SĂ TE AJUNGĂ'],why:['Uneori cel mai bun semn apare după o pauză','Un gând care aduce ușurare e mai util decât o coincidență','Intuiția se aude mai bine când nu te mai convingi singur','Întâmplarea e un consilier bun cât timp decizia rămâne a ta','Observă ce simți imediat după ce îți imaginezi că ai decis','Un semn pe care trebuie să-l forțezi e de obicei slab','Uneori Universul răspunde prin simpla lipsă a rezistenței interioare','Lasă alegerii puțin aer și vezi dacă dorința revine','Dacă ambele variante par semne, alege-o pe cea care te liniștește','Cosmosului îi place drama; tu trăiești cu urmările']},human:{yes:['DA, SUNĂ VIU','EU AȘ ÎNCERCA','DĂ-I O ȘANSĂ','PARE A FI DA-UL TĂU','LASĂ-TE SĂ ÎNCERCI','PARE REZONABIL','NU AMÂNA LA NESFÂRȘIT','DACĂ VREI, ÎNCEARCĂ','E UN RISC REZONABIL','DA, CU OCHII DESCHIȘI'],no:['EU AȘ SĂRI PESTE AZI','NU SCOATE UN DA CU FORȚA DIN TINE','O PAUZĂ ARE SENS','PĂSTREAZĂ DREPTUL SĂ TE RĂZGÂNDEȘTI','ÎNCĂ NU MĂ CONVINGE','NU O FACE PE PILOT AUTOMAT','ÎNTÂI AFLĂ CE VREI','NU TREBUIE SĂ DECIZI ACUM','AZI AȘ ALEGE LINIȘTEA','LASĂ DECIZIA SĂ SE COACĂ'],why:['Un prieten bun te-ar întreba ce vrei să obții după această alegere','Dacă prețul unei greșeli e mic, experimentul e rezonabil','Dacă disputa interioară devine zgomotoasă, o pauză poate fi mai bună','O decizie devine mai solidă când o poți explica într-o singură propoziție','Privește dimineața de mâine, nu doar emoția de acum','Dorința și obligația se confundă ușor; verifică ce e al tău','Uneori ajunge un pas reversibil în locul unei decizii finale','Dacă vrei și te temi, separă riscul real de emoția normală','Nu orice îndoială înseamnă nu; uneori înseamnă că mai vrei claritate','Alege varianta pe care nu va trebui să ți-o justifici mâine']} ,wild:{yes:['DA. ȘEDINȚA S-A ÎNCHEIAT','APROBAT DE DEPARTAMENTUL IDEILOR PROASTE','APASĂ BUTONUL','POVESTEA ARE NEVOIE DE O RĂSTURNARE','HAI PÂNĂ NU REVINE RAȚIUNEA','AZI MERITĂ PUȚIN MAI MULTĂ VIAȚĂ','IA BUCATA ASTA MICĂ DE HAOS','DA, DAR VREM POVESTEA DUPĂ','REBELUL INTERIOR A SEMNAT','PLAN DUBIOS. ÎMI PLACE'],no:['NU. ĂSTA NU MAI E HAOS DISTRACTIV','PÂNĂ ȘI REBELUL INTERIOR S-A RETRAS','POVESTEA NU ARE NEVOIE DE ASTA','AMÂNĂ DEZASTRUL','AZI SARI PESTE AVENTURA ASTA','NU, PĂSTREAZĂ VIAȚA BONUS','PÂNĂ ȘI EU PUN FRÂNĂ','IDEE PROASTĂ FĂRĂ POVESTE BUNĂ','SARI PESTE EPISODUL ĂSTA','HAOSUL VOTEAZĂ NU'],why:['Dacă faci o prostie, măcar păstreaz-o reversibilă','O aventură bună lasă o poveste; una proastă lasă o factură','Impulsul e minunat până începe să semneze contracte','Uneori spontaneitatea merită o seară de libertate','Dacă mâine va fi amuzant, șansele arată deja mai bine','Adultul interior poate protesta, dar măcar spune-i planul','Riscul pentru o poveste poate fi grozav; riscul pentru plictiseală nu are sens','Păstrează o ieșire de urgență și aventura devine mai plăcută','Dacă ideea dubioasă supraviețuiește dimineții, a câștigat un argument','Haosul de azi ar trebui să-l respecte puțin pe tine de mâine']}}
+          };
+          for(const l of ['ru','en','ro'])for(const m of ['universe','human','wild'])for(const k of ['yes','no','why'])RESP[l][m][k].push(...EXTRA_RESP_2[l][m][k]);
+          '''
+          s=s.replace(marker2,extra+'\n'+marker2)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Add SEX category and expand answer variety" || exit 0
+          git push
