@@ -1,0 +1,36 @@
+name: Double answer variety v3
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/double-answer-pool-v3.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand all answer pools with polished variants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text()
+          marker='const danger='
+          if 'const EXTRA_RESP_V3=' in s: raise SystemExit
+          extra=r'''const EXTRA_RESP_V3={
+ru:{universe:{yes:['ВСЕЛЕННАЯ КИВАЕТ','ЗНАК ПРИНЯТ','ПОХОЖЕ, ДОРОГА ОТКРЫТА','ИНТУИЦИЯ ГОВОРИТ ДА','СЕГОДНЯ СУДЬБА ЗА'],no:['ВСЕЛЕННАЯ СОВЕТУЕТ НЕ СПЕШИТЬ','ЗНАКА НЕТ. И ЭТО ТОЖЕ ЗНАК','КОСМОС ВЗЯЛ ПАУЗУ','ЛУЧШЕ ПРОПУСТИТЬ ЭТОТ ПОВОРОТ','СЕГОДНЯ ЗВЁЗДЫ ЗА ТИШИНУ'],why:['Если мысль возвращается третий раз, возможно, она просит внимания','Интуиция особенно полезна там, где таблица уже ничего не добавляет','Иногда правильный знак выглядит как неожиданное спокойствие','Оставь судьбе шанс удивить тебя, но не отдавай ей руль целиком','Если после мысленного «да» стало легче, это любопытная улика']},human:{yes:['Я БЫ СКАЗАЛ ДА','ПОЧЕМУ БЫ НЕ ПОПРОБОВАТЬ','ПОХОЖЕ, МОЖНО','РАЗРЕШИ СЕБЕ','ДА, ТОЛЬКО БЕЗ ЛИШНЕЙ ДРАМЫ'],no:['Я БЫ НЕ СТАЛ','ОСТАВЬ ЭТО В ПОКОЕ','НЕ СЕЙЧАС','ПОХОЖЕ, ТЕБЕ ЭТО НЕ НУЖНО','ЛУЧШЕ СОХРАНИТЬ СЕБЕ НЕРВЫ'],why:['Представь, что этот вопрос задал близкий друг, и послушай собственный совет','Если цена решения выше удовольствия от него, арифметика уже всё сказала','Нормально выбрать то, после чего не придётся долго объясняться с собой','Желание заслуживает внимания, но не каждое желание требует действия','Хороший тест: захочется ли тебе защищать это решение завтра утром']},wild:{yes:['ДА. И ХВАТИТ СОВЕЩАТЬСЯ','ВПЕРЁД, ПОКА НЕ ПЕРЕДУМАЛ','ПЛАН ПОДОЗРИТЕЛЬНЫЙ. ОДОБРЯЮ','СЕГОДНЯ МОЖНО ЧУТЬ БОЛЬШЕ ЖИЗНИ','НАЖИМАЙ НА КНОПКУ'],no:['ДАЖЕ Я ГОВОРЮ НЕТ','ЭТОТ ХАОС НАМ НЕ НУЖЕН','ОСТАНОВИСЬ, ПОКА КРАСИВО','НЕТ. СОХРАНИМ БЕЗУМИЕ НА ДРУГОЙ ДЕНЬ','СЛИШКОМ СОМНИТЕЛЬНО ДАЖЕ ДЛЯ WHY NOT?'],why:['Иногда лучший план тот, который потом начинается словами «короче, слушай»','Если последствия помещаются в смешную историю, риск уже выглядит симпатичнее','Жизнь короткая, но чек всё равно сохрани','Разум просил передать, что он категорически против. Мы записали его мнение','Если уж делать глупость, пусть она хотя бы будет качественной']}},
+en:{universe:{yes:['THE UNIVERSE NODS','SIGN RECEIVED','THE ROAD LOOKS OPEN','INTUITION SAYS YES','FATE IS ON YOUR SIDE TODAY'],no:['THE UNIVERSE SAYS DO NOT RUSH','NO SIGN IS A SIGN TOO','THE COSMOS IS TAKING A PAUSE','SKIP THIS TURN','THE STARS PREFER QUIET TODAY'],why:['If the thought keeps returning, perhaps it deserves attention','Intuition becomes useful when the spreadsheet has nothing left to add','Sometimes the right sign feels like unexpected calm','Give fate room to surprise you, just do not hand it the steering wheel','If imagining yes makes you lighter, that is interesting evidence']},human:{yes:['I WOULD SAY YES','WHY NOT TRY IT','LOOKS LIKE A YES','LET YOURSELF HAVE THIS','YES, JUST SKIP THE DRAMA'],no:['I WOULD NOT','LEAVE THIS ONE ALONE','NOT RIGHT NOW','YOU MAY NOT ACTUALLY NEED THIS','SAVE YOURSELF THE HEADACHE'],why:['Imagine a close friend asked you this and listen to your own advice','If the cost exceeds the pleasure, the arithmetic has spoken','Choose the option you will not need to explain to yourself for hours','A desire deserves attention, but not every desire needs action','Good test: will you still defend this choice tomorrow morning']},wild:{yes:['YES. MEETING OVER','GO BEFORE YOU CHANGE YOUR MIND','QUESTIONABLE PLAN. APPROVED','TODAY COULD USE MORE LIFE','PRESS THE BUTTON'],no:['EVEN I SAY NO','WE DO NOT NEED THIS KIND OF CHAOS','STOP WHILE IT STILL LOOKS GOOD','NO. SAVE THE MADNESS FOR ANOTHER DAY','TOO QUESTIONABLE EVEN FOR WHY NOT?'],why:['Sometimes the best stories begin with “okay, listen to this”','If the consequences fit into a funny story, the risk looks friendlier','Life is short, but keep the receipt','Reason asked us to say it strongly objects. Duly noted','If you are going to do something silly, at least do it properly']}},
+ro:{universe:{yes:['UNIVERSUL DĂ DIN CAP','SEMN PRIMIT','DRUMUL PARE DESCHIS','INTUIȚIA SPUNE DA','AZI DESTINUL E CU TINE'],no:['UNIVERSUL SPUNE SĂ NU TE GRĂBEȘTI','LIPSA SEMNULUI E ȘI EA UN SEMN','COSMOSUL IA O PAUZĂ','SARI PESTE COTITURA ASTA','AZI STELELE PREFERĂ LINIȘTEA'],why:['Dacă gândul revine mereu, poate merită atenție','Intuiția devine utilă când tabelul nu mai are nimic de adăugat','Uneori semnul potrivit arată ca o liniște neașteptată','Lasă destinului loc să te surprindă, dar nu-i da volanul','Dacă un da imaginar te face mai ușor, e un indiciu interesant']},human:{yes:['EU AȘ SPUNE DA','DE CE SĂ NU ÎNCERCI','PARE UN DA','DĂ-ȚI VOIE','DA, DAR FĂRĂ DRAMĂ'],no:['EU NU AȘ FACE-O','LASĂ ASTA ÎN PACE','NU ACUM','POATE CHIAR NU AI NEVOIE DE ASTA','MAI BINE ÎȚI PĂSTREZI NERVII'],why:['Imaginează-ți că un prieten apropiat ți-a pus întrebarea și ascultă-ți propriul sfat','Dacă prețul e mai mare decât plăcerea, aritmetica a răspuns deja','Alege varianta pe care nu va trebui să ți-o explici ore întregi','O dorință merită atenție, dar nu orice dorință cere acțiune','Test bun: vei apăra alegerea asta și mâine dimineață?']},wild:{yes:['DA. ȘEDINȚA S-A ÎNCHEIAT','HAI, PÂNĂ NU TE RĂZGÂNDEȘTI','PLAN DUBIOS. APROBAT','AZI MERITĂ PUȚIN MAI MULTĂ VIAȚĂ','APASĂ BUTONUL'],no:['PÂNĂ ȘI EU SPUN NU','NU AVEM NEVOIE DE HAOSUL ĂSTA','OPREȘTE-TE CÂT ÎNCĂ ARATĂ BINE','NU. PĂSTRĂM NEBUNIA PENTRU ALTĂ ZI','PREA DUBIOS CHIAR ȘI PENTRU WHY NOT?'],why:['Uneori cele mai bune povești încep cu „stai să-ți spun”','Dacă urmările încap într-o poveste amuzantă, riscul pare mai simpatic','Viața e scurtă, dar păstrează bonul','Rațiunea ne-a rugat să spunem că se opune categoric. Am notat','Dacă tot faci o prostie, măcar fă-o cum trebuie']}}
+};
+for(const l of ['ru','en','ro'])for(const m of ['universe','human','wild'])for(const k of ['yes','no','why'])RESP[l][m][k].push(...EXTRA_RESP_V3[l][m][k]);
+'''
+          s=s.replace(marker,extra+'\n'+marker)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Expand WHY NOT answer variety again" || exit 0
+          git push
