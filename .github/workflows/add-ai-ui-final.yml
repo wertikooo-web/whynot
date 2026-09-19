@@ -1,0 +1,45 @@
+name: Add AI UI controls final
+on:
+  push:
+    paths: ['.github/workflows/add-ai-ui-final.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch current index directly
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          if 'id="aiReal"' not in s:
+            s=s.replace('.quick{display:flex;', '.ai-layer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}.ai-real{border:2px solid;border-radius:999px;background:var(--blue);padding:9px 14px;font-weight:950}.ai-offer{display:none;border:2px solid;border-radius:16px;background:var(--pink);padding:10px 13px;font-weight:850;font-size:13px}.ai-offer.show{display:inline-block}.quick{display:flex;',1)
+            old='<div class="askbox"><input id="question" maxlength="180"><button id="decide"></button></div><div class="quick" id="quick"></div>'
+            new='<div class="askbox"><input id="question" maxlength="180"><button id="decide"></button></div><div class="ai-layer"><button class="ai-real" id="aiReal"></button><button class="ai-offer" id="aiOffer"></button></div><div class="quick" id="quick"></div>'
+            assert old in s, 'askbox marker missing'
+            s=s.replace(old,new,1)
+            s=s.replace("en:{ask:'Ask something',", "en:{aiReal:'✨ Ask for real',aiOffer:'This question is too complex. Ask AI?',ask:'Ask something',",1)
+            s=s.replace("ru:{ask:'Задать вопрос',", "ru:{aiReal:'✨ Спроси по-настоящему',aiOffer:'Этот вопрос слишком сложен. Спросить AI?',ask:'Задать вопрос',",1)
+            s=s.replace("ro:{ask:'Pune o întrebare',", "ro:{aiReal:'✨ Întreabă pe bune',aiOffer:'Întrebarea asta e prea complexă. Întrebăm AI?',ask:'Pune o întrebare',",1)
+            marker="document.getElementById('question').placeholder=t.ph;"
+            assert marker in s, 'render marker missing'
+            s=s.replace(marker,"document.getElementById('aiReal').textContent=t.aiReal;document.getElementById('aiOffer').textContent=t.aiOffer;"+marker,1)
+            hook="document.getElementById('askTop').onclick=()=>document.getElementById('question').focus();"
+            assert hook in s, 'event marker missing'
+            code="""const aiReal=document.getElementById('aiReal'),aiOffer=document.getElementById('aiOffer'),qInput=document.getElementById('question');qInput.addEventListener('input',()=>aiOffer.classList.toggle('show',qInput.value.trim().length>=70));function aiPrototype(){alert({ru:'AI-слой готов. Следующий шаг — подключить модель',en:'AI layer ready. Next step: connect the model',ro:'Stratul AI este gata. Următorul pas: conectarea modelului'}[lang])}aiReal.onclick=aiPrototype;aiOffer.onclick=aiPrototype;"""
+            s=s.replace(hook,hook+code,1)
+            p.write_text(s)
+          assert 'id="aiReal"' in p.read_text()
+          assert 'Этот вопрос слишком сложен. Спросить AI?' in p.read_text()
+          assert '3 умных решения' not in p.read_text()
+          PY
+      - name: Commit actual index
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Add visible AI question controls" || exit 0
+          git push
