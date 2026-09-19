@@ -1,0 +1,58 @@
+name: Update UI copy and how it works
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/ui-copy-how-it-works.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text()
+          # CSS popup
+          s=s.replace('.top,.langs{display:flex;gap:8px}', '.top,.langs{display:flex;gap:8px}.how-wrap{position:relative}.how-pop{display:none;position:absolute;right:0;top:48px;width:min(430px,82vw);background:var(--white);border:2px solid var(--ink);border-radius:18px;padding:18px 20px;box-shadow:7px 7px 0;z-index:50;font-size:15px;line-height:1.45;font-weight:650}.how-wrap.open .how-pop{display:block}')
+          # Header button before ask
+          old='<div class="top"><button class="pill" id="askTop"></button><div class="langs">'
+          new='<div class="top"><div class="how-wrap" id="howWrap"><button class="pill" id="howBtn"></button><div class="how-pop" id="howPop"></div></div><button class="pill" id="askTop"></button><div class="langs">'
+          s=s.replace(old,new)
+          # Remove result fine-print visually/content container remains harmless
+          s=s.replace('<div class="fine" id="fine"></div>','')
+          # RU requested copy
+          s=s.replace("hero:'Для мелких жизненных решений, которые вы можете принять сами, но всё равно хочется официального разрешения'", "hero:'Для разных жизненных решений, которые вы можете принять сами, но всё равно хочется официального разрешения'")
+          s=s.replace("fine:'Только для развлечения, согласие, безопасность и закон всегда важнее шутки',", "fine:'',")
+          s=s.replace("gl:'Мы собрали маленькие проблемы, которые человечество почему-то до сих пор не решило'", "gl:''")
+          # Equivalent cleanup in EN/RO
+          s=s.replace("hero:'For the tiny decisions you can make yourself but still want external approval for'", "hero:'For the different life decisions you can make yourself but still want external approval for'")
+          s=s.replace("fine:'Entertainment only, consent, safety and local law always override the joke',", "fine:'',")
+          s=s.replace("gl:'Choose one of humanity’s surprisingly persistent little problems'", "gl:''")
+          s=s.replace("hero:'Pentru micile decizii pe care le poți lua singur, dar pentru care tot vrei o aprobare'", "hero:'Pentru diferite decizii de viață pe care le poți lua singur, dar pentru care tot vrei o aprobare'")
+          s=s.replace("fine:'Doar pentru divertisment, consimțământul, siguranța și legea sunt mai importante decât gluma',", "fine:'',")
+          s=s.replace("gl:'Micile probleme pe care omenirea încă nu le-a rezolvat'", "gl:''")
+          # Add localized strings after ask field in each locale
+          s=s.replace("en:{ask:'Ask something',", "en:{ask:'Ask something',how:'How it works',howText:'You bring a dilemma. WHY NOT? connects global analytics, fate, reason, the Universe and common sense. Then it delivers a verdict you can follow, ignore or immediately send to your friends.',")
+          s=s.replace("ru:{ask:'Задать вопрос',", "ru:{ask:'Задать вопрос',how:'Как это работает',howText:'Вы приносите дилемму. WHY NOT? подключает мировую аналитику, судьбу, разум, Вселенную и здравый смысл. Потом выдаёт вердикт, который можно выполнить, проигнорировать или немедленно отправить друзьям.',")
+          s=s.replace("ro:{ask:'Pune o întrebare',", "ro:{ask:'Pune o întrebare',how:'Cum funcționează',howText:'Tu aduci dilema. WHY NOT? conectează analiza mondială, destinul, rațiunea, Universul și bunul-simț. Apoi dă un verdict pe care îl poți urma, ignora sau trimite imediat prietenilor.',")
+          # render: avoid removed fine element and populate popup
+          s=s.replace("['askTop','tagline','heroCopy','decide','kicker','again','share','fine','float1','float2','galleryTitle','galleryLead','moodsTitle','footer','disclaimer','modeHint']", "['askTop','tagline','heroCopy','decide','kicker','again','share','float1','float2','galleryTitle','galleryLead','moodsTitle','footer','disclaimer','modeHint']")
+          s=s.replace("[t.ask,t.tag,t.hero,t.dec,t.kick,t.again,t.share,t.fine,t.f1,t.f2,t.gt,t.gl,t.moods,t.foot,t.disclaimer,t.hint]", "[t.ask,t.tag,t.hero,t.dec,t.kick,t.again,t.share,t.f1,t.f2,t.gt,t.gl,t.moods,t.foot,t.disclaimer,t.hint]")
+          needle="document.getElementById('question').placeholder=t.ph;"
+          s=s.replace(needle, "document.getElementById('howBtn').textContent=t.how;document.getElementById('howPop').textContent=t.howText;"+needle)
+          # interactions click + hover/focus friendly
+          anchor="document.getElementById('askTop').onclick=()=>document.getElementById('question').focus();"
+          addition="document.getElementById('howBtn').onclick=(e)=>{e.stopPropagation();document.getElementById('howWrap').classList.toggle('open')};document.getElementById('howWrap').onmouseenter=()=>document.getElementById('howWrap').classList.add('open');document.getElementById('howWrap').onmouseleave=()=>document.getElementById('howWrap').classList.remove('open');document.addEventListener('click',e=>{if(!document.getElementById('howWrap').contains(e.target))document.getElementById('howWrap').classList.remove('open')});"
+          s=s.replace(anchor, anchor+addition)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Update copy and add how it works popup" || exit 0
+          git push
