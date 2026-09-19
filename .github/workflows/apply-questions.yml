@@ -1,0 +1,36 @@
+name: Apply dilemma cards
+on:
+  push:
+    paths:
+      - 'questions-60.js'
+      - '.github/workflows/apply-questions.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace question catalog
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          index = Path('index.html')
+          s = index.read_text()
+          q = Path('questions-60.js').read_text()
+          arr = q.split('=',1)[1].strip().rstrip(';')
+          new = 'const Q=' + arr + ';'
+          s2, n = re.subn(r'const Q=\[.*?\];\nconst KW=', new + '\nconst KW=', s, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('Could not find Q catalog')
+          index.write_text(s2)
+          PY
+      - name: Commit updated index
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Expand dilemma gallery to 12 cards per category'
+          git push
