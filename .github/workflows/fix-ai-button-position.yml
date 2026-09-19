@@ -1,0 +1,32 @@
+name: Keep AI button fixed under oracle
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/fix-ai-button-position.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          s=s.replace('.oracle-ai{grid-column:2;display:flex;justify-content:center;margin-top:-132px;margin-bottom:72px;position:relative;z-index:5}', '.oracle-ai{position:absolute;left:50%;bottom:-52px;transform:translateX(-50%);display:flex;justify-content:center;z-index:5;white-space:nowrap}')
+          s=s.replace('@media(max-width:900px){.oracle-ai{grid-column:1;margin-top:-12px;margin-bottom:22px;justify-content:center}', '@media(max-width:900px){.oracle-ai{position:absolute;left:50%;bottom:-52px;transform:translateX(-50%);margin:0;justify-content:center}')
+          old='<div class="float f2" id="float2"></div></div><div class="oracle-ai"><button class="ai-real" id="aiReal"></button></div>'
+          new='<div class="float f2" id="float2"></div><div class="oracle-ai"><button class="ai-real" id="aiReal"></button></div></div>'
+          if old not in s:
+              raise SystemExit('oracle/button markup marker not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+          PY
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Anchor AI button to oracle so results do not move it" || exit 0
+          git push
