@@ -1,0 +1,35 @@
+name: Move Ask for real under oracle
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/move-ai-button-under-oracle.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text()
+          old='<div class="ai-layer"><button class="ai-real" id="aiReal"></button><button class="ai-offer" id="aiOffer"></button></div><div class="quick" id="quick"></div>'
+          new='<div class="ai-layer"><button class="ai-offer" id="aiOffer"></button></div><div class="quick" id="quick"></div>'
+          if old not in s: raise SystemExit('source AI block not found')
+          s=s.replace(old,new,1)
+          old_oracle='<div class="float f2" id="float2"></div></div></section>'
+          new_oracle='<div class="float f2" id="float2"></div></div><div class="oracle-ai"><button class="ai-real" id="aiReal"></button></div></section>'
+          if old_oracle not in s: raise SystemExit('oracle marker not found')
+          s=s.replace(old_oracle,new_oracle,1)
+          s=s.replace('.ai-layer{display:flex;', '.oracle-ai{grid-column:2;display:flex;justify-content:center;margin-top:-132px;margin-bottom:72px;position:relative;z-index:5}.ai-layer{display:flex;',1)
+          # On stacked/mobile layouts keep the button directly beneath the oracle
+          s=s.replace('@media(max-width:900px){.hero{grid-template-columns:1fr;', '@media(max-width:900px){.oracle-ai{grid-column:1;margin-top:-12px;margin-bottom:22px;justify-content:center}.hero{grid-template-columns:1fr;',1)
+          p.write_text(s)
+          PY
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Move Ask for real button under blue oracle" || exit 0
+          git push
