@@ -1,0 +1,32 @@
+name: Fix mobile how popup
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/fix-mobile-how-popup.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch mobile popup only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='@media(max-width:600px){.wrap{padding:12px 14px 50px}'
+          new='@media(max-width:600px){.how-pop{position:fixed;left:14px;right:14px;top:120px;width:auto;max-width:none;max-height:calc(100dvh - 145px);overflow-y:auto;padding:18px 20px;box-shadow:7px 7px 0}.wrap{padding:12px 14px 50px}'
+          if old not in s:
+              raise SystemExit('mobile media marker not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Keep how-it-works popup inside mobile viewport" || exit 0
+          git push
